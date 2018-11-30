@@ -8,24 +8,24 @@
 		private String carState;
 
 		public Controller(){
-			initializeSensors();
-			initializeProcessors();
-			initializeVehicleServices();
-			carState = "idle";
+			this.initializeSensors();
+			this.initializeProcessors();
+			this.initializeVehicleServices();
+			this.carState = "Idle";
 		}
 
 		public void initializeSensors(){
-			sensors = new Sensors();
+			this.sensors = new Sensors();
 		}
 
 		public void initializeProcessors(){
-			imageProcessor = new ImageProcessor();
-			signalProcessor = new SignalProcessor();
-			postProcessor = new PostProcessor();
+			this.imageProcessor = new ImageProcessor();
+			this.signalProcessor = new SignalProcessor();
+			this.postProcessor = new PostProcessor();
 		}
 
 		public void initializeVehicleServices(){
-			navigationService = new VehicleSystem();
+			this.navigationService = new VehicleSystem();
 		}
 
 		public void terminateProcessor(){
@@ -51,16 +51,61 @@
 		//method to get the state of car after every move
 		public String getCurrentCarLocation(){
 			//get the current state of the car from the processors
-			return currentCarLocation;
+			return this.currentCarLocation;
 		}
 
 		public void setCarState(){
 			//update car state on the basis of user's current location
 		}
 
-				
-		public static void Main(String args[]){
+		public String getCarState(){
+			//evaluate car state and return the corresponding string
+			//possible car states are - Idle, Moving, Slot_Reached,Parked,Un-parked
+			this.carState;
+		}
 
+		public boolean evaluateSlot(){
+			//evaluates the slot using the cameras and the proximity sensors (through the processors)
+			//returns true if slot ok and false if slot not ok
+		}
+
+		public String drive(String expectedCarState, Location location){
+			Location currentCarLocation=this.getCurrentCarLocation();
+			boolean slotEvaluated = false;
+			while(currentCarLocation != location){
+				status = this.getDecision();
+				switch(status.gear){  
+					case "Forward":
+					//navigation service will control the hardware
+					this.navigationService.forward(status.angle,status.speed);
+					this.setCarState();
+					break;
+
+					case "Reverse":
+					this.navigationService.reverse(status.angle,status.speed);
+					this.setCarState();
+					break;
+
+					case "Stop":
+					this.navigationService.neutral();
+					this.setCarState();
+					break;
+				}
+				currentCarLocation = this.getCurrentCarLocation();
+				carState = this.getCarState();
+				if(expectedCarState == "Parked" && slotEvaluated == false){
+					if(carState == "Slot_Reached"){
+						slotEvaluated = true;
+						boolean slotOk = this.evaluateSlot(location);
+						if(!slotOk){
+							break;
+						}
+					}
+				}
+			}
+			return carState;
+		}
+		public static void Main(String args[]){
 			GUI gui = new GUI();
 			String command = gui.getCommand();
 			gui.addListener(
@@ -68,7 +113,7 @@
 					//initiliazing decision maker (which will initialize the processors, sensors and vehicle system)
 					Controller controller = new Controller();
 					Status status;
-					String finalCarState;
+					String finalCarState="";
 					if(command == "Park"){
 						int maxSlots=0, maxAttempts=5, m, n;
 						outerloop:
@@ -77,13 +122,14 @@
 							maxSlots = locations.length();
 							for(m=0; m<maxSlots; m++){
 								finalCarState = controller.drive("Parked",locations[m]);
-								if(finalCarState == "Parked" || finalCarState == "Parking failed"){
+								if(finalCarState == "Parked"){
 									break outerloop;	
 								}
 							}
 						}
+						finalCarState != "Parked" ? "Parking Failed" : finalCarState;
 					}
-					else{
+					else{ // when command == "Un-Parked"
 						finalCarState = controller.drive("Un-Parked",userlocation);
 					}
 					//call  services based on car state
@@ -109,33 +155,4 @@
 				}
 
 			}
-
-			public String drive(String finalCarState, Location location){
-			Location currentCarLocation=getCurrentCarLocation();
-			while(currentCarLocation != location){
-				status = controller.getDecision();
-
-				switch(status.gear){  
-					case "Forward":
-					//navigation service will control the hardware
-					controller.navigationService.forward(status.angle,status.speed);
-					setCarState();
-					break;
-
-					case "Reverse":
-					controller.navigationService.reverse(status.angle,status.speed);
-					setCarState();
-					break;
-
-					case "Stop":
-					controller.navigationService.neutral();
-					setCarState();
-					break;
-				}
-
-				currentCarLocation = controller.getCurrentCarLocation();
-			}
-
-			return carState;
-		}
 		}
