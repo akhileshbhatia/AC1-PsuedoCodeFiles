@@ -3,15 +3,19 @@
 		private Processor imageProcessor;
 		private Processor signalProcessor;
 		private Processor postProcessor;
+		private Sensors sensors;
 		private VehicleSystem navigationService;
 		private String carState;
 
 		public Controller(){
-
+			initializeSensors();
 			initializeProcessors();
 			initializeVehicleServices();
 			carState = "idle";
+		}
 
+		public void initializeSensors(){
+			sensors = new Sensors();
 		}
 
 		public void initializeProcessors(){
@@ -25,11 +29,15 @@
 		}
 
 		public void terminateProcessor(){
-			// code to turn off the sensors and processors.
+			// code to turn off the processors.
 		}
 
 		public void terminateVehicleServices(){
 			// code to turn off the Vehicle system.
+		}
+
+		public void terminateSensors(){
+			// code to turn off the sensor
 		}
 
 		//Decision maker to decide which direction to move
@@ -53,16 +61,11 @@
 				
 		public static void Main(String args[]){
 
-			boolean collisionDetected = false;
 			GUI gui = new GUI();
 			String command = gui.getCommand();
-			Sensors sensors = new Sensors();
 			gui.addListener(
 				new onCommandReceived(Location userlocation){
-					//activating sensors irrespective of received command
-					sensors.activate();
-
-					//initiliazing decision maker
+					//initiliazing decision maker (which will initialize the processors, sensors and vehicle system)
 					Controller controller = new Controller();
 					Status status;
 					String finalCarState;
@@ -75,14 +78,10 @@
 							for(m=0; m<maxSlots; m++){
 								finalCarState = controller.drive("Parked",locations[m]);
 								if(finalCarState == "Parked" || finalCarState == "Parking failed"){
-									break outerloop;
-									
+									break outerloop;	
 								}
-
 							}
-
 						}
-
 					}
 					else{
 						finalCarState = controller.drive("Un-Parked",userlocation);
@@ -93,6 +92,7 @@
 						gui.generateNotification(Parking.successNotification);
 						controller.terminateProcessor();
 						controller.terminateVehicleServices();
+						controller.terminateSensors();
 						break;
 
 						case "Parking failed":
@@ -103,6 +103,7 @@
 						case "Un-Parked":
 						gui.generateNotification(Parking.unparkedSuccessNotification);
 						controller.terminateProcessor();
+						controller.terminateSensors();
 						break;
 					}
 				}
@@ -117,12 +118,12 @@
 				switch(status.gear){  
 					case "Forward":
 					//navigation service will control the hardware
-					controller.navigationService.forward(state.angle,state.speed);
+					controller.navigationService.forward(status.angle,status.speed);
 					setCarState();
 					break;
 
 					case "Reverse":
-					controller.navigationService.reverse(state.angle,state.speed);
+					controller.navigationService.reverse(status.angle,status.speed);
 					setCarState();
 					break;
 
