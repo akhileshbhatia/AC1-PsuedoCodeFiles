@@ -1,0 +1,1 @@
+The Controller.java is the main file which contains the code to initialize and terminate the processors and underlying hardware that navigates the vehicle system. The "drive" method is common to both parking and unparking and used for moving the vehicle.
